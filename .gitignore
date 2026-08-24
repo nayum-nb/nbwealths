@@ -1,0 +1,10 @@
+.idea/
+*.iml
+target/
+*.log
+.env
+**/target/
+*.jar
+.DS_Store
+node_modules/
+/frontend/angular-app/dist

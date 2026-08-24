@@ -1,0 +1,14 @@
+server:
+  port: 8083
+
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-admin:5432/${POSTGRES_ADMIN_DB}
+    username: ${POSTGRES_ADMIN_USER}
+    password: ${POSTGRES_ADMIN_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - scaffold/maven-java17-keycloak-kafka
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Build with Maven
+        run: mvn -T 1C -DskipTests=false package --file pom.xml
+
+      - name: Run tests
+        run: mvn test -T 1C
+
+      - name: Build Docker images (placeholder)
+        run: echo "Build Docker images and push to GHCR (configure secrets.GHCR_TOKEN)"

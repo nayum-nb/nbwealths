@@ -1,0 +1,105 @@
+version: '3.8'
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  postgres-account:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: ${POSTGRES_ACCOUNT_DB}
+      POSTGRES_USER: ${POSTGRES_ACCOUNT_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_ACCOUNT_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_account:/var/lib/postgresql/data
+
+  postgres-portfolio:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: ${POSTGRES_PORTFOLIO_DB}
+      POSTGRES_USER: ${POSTGRES_PORTFOLIO_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PORTFOLIO_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata_portfolio:/var/lib/postgresql/data
+
+  postgres-admin:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: ${POSTGRES_ADMIN_DB}
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata_admin:/var/lib/postgresql/data
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:21.1.1
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+    environment:
+      KEYCLOAK_IMPORT: /opt/keycloak/data/import/realm.json
+
+  account-service:
+    build: ./services/account-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - postgres-account
+      - kafka
+      - keycloak
+    ports:
+      - "8081:8081"
+
+  portfolio-service:
+    build: ./services/portfolio-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - postgres-portfolio
+      - kafka
+      - keycloak
+    ports:
+      - "8082:8082"
+
+  admin-service:
+    build: ./services/admin-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - postgres-admin
+      - kafka
+      - keycloak
+    ports:
+      - "8083:8083"
+
+volumes:
+  pgdata_account:
+  pgdata_portfolio:
+  pgdata_admin:
